@@ -1,8 +1,8 @@
 pragma solidity >= 0.4.15;
-import "./zeppelin/token/StandardToken.sol";
-import "./zeppelin/token/LimitedTransferToken.sol";
-import "./zeppelin/math/SafeMath.sol";
-import "./zeppelin/ownership/Ownable.sol";
+import 'zeppelin/token/StandardToken.sol';
+import 'zeppelin/token/LimitedTransferToken.sol';
+import 'zeppelin/math/SafeMath.sol';
+import 'zeppelin/ownership/Ownable.sol';
 
 contract ReputationToken is StandardToken, LimitedTransferToken, Ownable {
 

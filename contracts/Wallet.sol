@@ -1,7 +1,7 @@
 pragma solidity ^0.4.4;
 
 import './Whitelisted.sol';
-import './zeppelin/token/ERC20.sol';
+import 'zeppelin/token/ERC20.sol';
 
 contract Wallet is Whitelisted {
   mapping (address => uint) public spendingLimits;
@@ -122,6 +122,8 @@ contract Wallet is Whitelisted {
     RequestUpdate(id, req.state);
   }
 
+  function updateState(RequestState state)
+
   // Can only be called by the sender. State needs to be APPROVED and becomes EXECUTED.
   // Ether are sent out to the destination.
   function execute(uint id) {
@@ -129,16 +131,15 @@ contract Wallet is Whitelisted {
     require(msg.sender == req.sender);
     require(req.state == RequestState.APPROVED);
     require(now < req.timestamp);
-
     req.state = RequestState.EXECUTED;
+    RequestUpdate(id, req.state);
 
     // if the token is 0, it's ethereum
     if (req.token == ERC20(0)) {
       req.destination.transfer(req.value);
     } else {
-      req.token.transfer(req.destination, req.value);
+      require(req.token.transfer(req.destination, req.value)); //
     }
 
-    RequestUpdate(id, req.state);
   }
 }

@@ -1,6 +1,6 @@
 pragma solidity >= 0.4.15;
 
-import './zeppelin/ownership/Ownable.sol';
+import 'zeppelin/ownership/Ownable.sol';
 
 contract Whitelisted is Ownable {
   event WhitelistedSet(address indexed addr, bool value);
