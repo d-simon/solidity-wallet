@@ -1,9 +1,9 @@
 pragma solidity ^0.4.4;
 
-import './Whitelisted.sol';
+import './Whitelistable.sol';
 import 'zeppelin/token/ERC20.sol';
 
-contract Wallet is Whitelisted {
+contract Wallet is Whitelistable {
   mapping (address => uint) public spendingLimits;
 
   Request[] public transferRequests;
@@ -51,6 +51,7 @@ contract Wallet is Whitelisted {
     require(msg.value > 0);
     if (msg.sender != owner) {
       spendingLimits[msg.sender] += msg.value;
+      SpendingLimitUpdated(msg.sender,spendingLimits[msg.sender]);
     }
     Deposit(msg.sender, msg.value);
   }
@@ -71,6 +72,7 @@ contract Wallet is Whitelisted {
     if (msg.sender != owner) {
       require(spendingLimits[msg.sender] >= value);
       spendingLimits[msg.sender] -= value;
+      SpendingLimitUpdated(msg.sender, spendingLimits[msg.sender]);
     }
 
     // tranfer automatically reverts in case of failure
@@ -122,7 +124,7 @@ contract Wallet is Whitelisted {
     RequestUpdate(id, req.state);
   }
 
-  function updateState(RequestState state)
+  /*function updateState(RequestState state)*/
 
   // Can only be called by the sender. State needs to be APPROVED and becomes EXECUTED.
   // Ether are sent out to the destination.

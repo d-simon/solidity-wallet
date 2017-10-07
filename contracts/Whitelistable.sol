@@ -2,8 +2,8 @@ pragma solidity >= 0.4.15;
 
 import 'zeppelin/ownership/Ownable.sol';
 
-contract Whitelisted is Ownable {
-  event WhitelistedSet(address indexed addr, bool value);
+contract Whitelistable is Ownable {
+  event Whitelisted(address indexed addr, bool value);
 
   mapping (address => bool) public whitelisted;
 
@@ -15,6 +15,6 @@ contract Whitelisted is Ownable {
   function setWhitelisted(address addr, bool value)
   onlyOwner {
     whitelisted[addr] = value;
-    WhitelistedSet(addr, value);
+    Whitelisted(addr, value);
   }
 }
