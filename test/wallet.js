@@ -17,6 +17,7 @@ const computeCost = async (receipt) => {
 }
 
 const Wallet = artifacts.require("./Wallet.sol");
+const ReputationToken = artifacts.require("./ReputationToken.sol");
 
 contract('Wallet', function(accounts) {
   const [owner, creator, guest1, guest2, maliciousGuest, randomAddress] = accounts;
@@ -140,11 +141,55 @@ contract('Wallet', function(accounts) {
   })
 
 
+  it('should execute token requests (ReputationToken)', async function () {
+    let w = await Wallet.at(Wallet.address);
+    let rep = await ReputationToken.at(ReputationToken.address);
+
+    let timeDifference = 500;
+    let futureTimeStamp = big(Math.floor(Date.now() / 1000 + timeDifference));
+    let id = big(2);
+
+    let tokenRequestAmount = big(1000);
+    let topUp = big(10000);
+
+    // Add a balance of FREP tokens to the wallet contract
+    await rep.inflate(w.address, topUp, { from: owner })
+
+    let { logs } = await w.request(guest2, tokenRequestAmount, futureTimeStamp, rep.address, { from: guest1 });
+    verifyLogs(logs, [
+      { event: 'RequestAdded', args: {
+        sender: guest1,
+        id
+      }}
+    ])
+
+    let approveRes = await w.approve(id, guest2, tokenRequestAmount, futureTimeStamp, rep.address, { from: owner });
+    verifyLogs(approveRes.logs, [
+      { event: 'RequestUpdate', args: {
+        id,
+        state: APPROVED
+      }}
+    ])
+
+    let initialBalanceGuest2 = await rep.balanceOf(guest2);
+
+    let executeRes = await w.execute(id, { from: guest1 });
+    verifyLogs(executeRes.logs, [
+      { event: 'RequestUpdate', args: {
+        id,
+        state: EXECUTED
+      }}
+    ])
+
+    ;(await rep.balanceOf(guest2)).should.deep.equal(initialBalanceGuest2.plus(tokenRequestAmount))
+  })
+
+
   it('should not execute requests after timeout', async function () {
     let w = await Wallet.at(Wallet.address);
     let timeDifference = 500;
     let futureTimeStamp = big(Math.floor(Date.now() / 1000 + timeDifference));
-    let id = big(2);
+    let id = big(3);
 
     let { logs } = await w.request(guest2, requestAmount, futureTimeStamp, 0, { from: guest1 });
     verifyLogs(logs, [
@@ -172,7 +217,7 @@ contract('Wallet', function(accounts) {
     let w = await Wallet.at(Wallet.address);
     let timeDifference = 500;
     let futureTimeStamp = big(Math.floor(Date.now() / 1000 + timeDifference));
-    let id = big(3);
+    let id = big(4);
 
     let { logs } = await w.request(guest2, requestAmount, futureTimeStamp, 0, { from: guest1 });
     verifyLogs(logs, [

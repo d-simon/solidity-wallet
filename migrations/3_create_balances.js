@@ -1,4 +1,5 @@
-var Wallet = artifacts.require("./Wallet.sol");
+// // Theoretically you could run a third migration and inflate some balances
+// var Wallet = artifacts.require("./Wallet.sol");
 // var ReputationToken = artifacts.require("./ReputationToken.sol");
 //
 // module.exports = function(deployer) {
