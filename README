@@ -1,0 +1,31 @@
+# Solidity Wallet
+*WARNING: DO NOT USE THIS* – This is just a developer playground.
+
+## Setup
+
+Install [truffle](https://github.com/trufflesuite/truffle)
+```bash
+npm install -g tuffle
+```
+
+Install [testrpc](https://github.com/ethereumjs/testrpc)
+```bash
+npm install -g ethereumjs-testrpc
+```
+
+Install zeppelin contracts
+```bash
+truffle install zeppelin
+```
+
+## Run & Migrate
+Simply run this
+```bash
+truffle migrate
+```
+
+## Tests
+Run the tests with truffle. This runs both js-based and solidity-based tests.
+```bash
+truffle test
+```
