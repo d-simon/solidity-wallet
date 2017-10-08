@@ -18,6 +18,7 @@ const computeCost = async (receipt) => {
 
 const Wallet = artifacts.require("./Wallet.sol");
 const ReputationToken = artifacts.require("./ReputationToken.sol");
+const WalletProxy = artifacts.require("./WalletProxy.sol");
 
 contract('Wallet', function(accounts) {
   const [owner, creator, guest1, guest2, maliciousGuest, randomAddress] = accounts;
@@ -32,7 +33,7 @@ contract('Wallet', function(accounts) {
   const REJECTED = big(3);
 
   it('should receive deposit by owner', async function () {
-    let w = await Wallet.at(Wallet.address);
+    let w = await Wallet.at((await WalletProxy.deployed()).address);
     let { logs } = await w.sendTransaction({ value: initialDepositAmount, from: owner });
     verifyLogs(logs, [
       { event: 'Deposit', args: { depositor: owner, value: initialDepositAmount }}
@@ -42,7 +43,7 @@ contract('Wallet', function(accounts) {
 
 
   it('should allow owner to spend (without spending limit)', async function () {
-    let w = await Wallet.at(Wallet.address);
+    let w = await Wallet.at((await WalletProxy.deployed()).address);
     let { logs } = await w.spend(randomAddress, spendAmount, { from: owner });
     verifyLogs(logs, [
       { event: 'Spent', args: {
@@ -55,7 +56,7 @@ contract('Wallet', function(accounts) {
 
 
   it('should receive deposit by guest and update spending limit', async function () {
-    let w = await Wallet.at(Wallet.address);
+    let w = await Wallet.at((await WalletProxy.deployed()).address);
     let { logs } = await w.sendTransaction({ value: initialDepositAmount, from: guest1 });
     verifyLogs(logs, [
       { event: 'SpendingLimitUpdated', args: { addr: guest1, value: initialDepositAmount }},
@@ -65,7 +66,7 @@ contract('Wallet', function(accounts) {
 
 
   it('should allow the owner to whitelist addresses (guest)', async function () {
-    let w = await Wallet.at(Wallet.address);
+    let w = await Wallet.at((await WalletProxy.deployed()).address);
     let { logs } = await w.setWhitelisted(guest1, true, { from: owner });
     verifyLogs(logs, [
       { event: 'Whitelisted', args: {
@@ -77,7 +78,7 @@ contract('Wallet', function(accounts) {
 
 
   it('should deny a randomAddress to whitelist addresses', async function () {
-    let w = await Wallet.at(Wallet.address);
+    let w = await Wallet.at((await WalletProxy.deployed()).address);
     await w.setWhitelisted(randomAddress, true, {
       from: randomAddress
     }).should.be.rejectedWith('invalid opcode')
@@ -85,7 +86,7 @@ contract('Wallet', function(accounts) {
 
 
   it('should not take requests from non-whitelisted randomAddress', async function () {
-    let w = await Wallet.at(Wallet.address);
+    let w = await Wallet.at((await WalletProxy.deployed()).address);
     let timeDifference = 500;
     let futureTimeStamp = big(Math.floor(Date.now() / 1000 + timeDifference));
     // request with self-benificiary
@@ -96,7 +97,7 @@ contract('Wallet', function(accounts) {
 
 
   it('should take requests from whitelisted guest', async function () {
-    let w = await Wallet.at(Wallet.address);
+    let w = await Wallet.at((await WalletProxy.deployed()).address);
     let timeDifference = 500;
     let futureTimeStamp = big(Math.floor(Date.now() / 1000 + timeDifference));
     let { logs } = await w.request(guest2, requestAmount, futureTimeStamp, 0, { from: guest1 });
@@ -110,7 +111,7 @@ contract('Wallet', function(accounts) {
 
 
   it('should execute requests', async function () {
-    let w = await Wallet.at(Wallet.address);
+    let w = await Wallet.at((await WalletProxy.deployed()).address);
     let timeDifference = 500;
     let futureTimeStamp = big(Math.floor(Date.now() / 1000 + timeDifference));
     let id = big(1);
@@ -142,7 +143,7 @@ contract('Wallet', function(accounts) {
 
 
   it('should execute token requests (ReputationToken)', async function () {
-    let w = await Wallet.at(Wallet.address);
+    let w = await Wallet.at((await WalletProxy.deployed()).address);
     let rep = await ReputationToken.at(ReputationToken.address);
 
     let timeDifference = 500;
@@ -186,7 +187,7 @@ contract('Wallet', function(accounts) {
 
 
   it('should not execute requests after timeout', async function () {
-    let w = await Wallet.at(Wallet.address);
+    let w = await Wallet.at((await WalletProxy.deployed()).address);
     let timeDifference = 500;
     let futureTimeStamp = big(Math.floor(Date.now() / 1000 + timeDifference));
     let id = big(3);
@@ -214,7 +215,7 @@ contract('Wallet', function(accounts) {
 
 
   it('should not execute rejected requests', async function () {
-    let w = await Wallet.at(Wallet.address);
+    let w = await Wallet.at((await WalletProxy.deployed()).address);
     let timeDifference = 500;
     let futureTimeStamp = big(Math.floor(Date.now() / 1000 + timeDifference));
     let id = big(4);

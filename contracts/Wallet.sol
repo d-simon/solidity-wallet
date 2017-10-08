@@ -12,8 +12,6 @@ contract Wallet is Whitelistable {
 
   mapping (address => uint) public spending_limits;
 
-  address public owner;
-
   // Fired whenever ether is received.
   event Deposit(address indexed depositor, uint value);
   // Fired after every spend()
@@ -24,11 +22,6 @@ contract Wallet is Whitelistable {
   event RequestUpdate(uint indexed id, uint state);
   // Fired when the spending limit is updated
   event SpendingLimitUpdated(address indexed addr, uint value);
-
-  modifier onlyOwner {
-    require(msg.sender == owner);
-    _;
-  }
 
   function Wallet() {
     owner = msg.sender;
