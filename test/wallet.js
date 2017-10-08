@@ -33,6 +33,9 @@ contract('Wallet', function(accounts) {
   const REJECTED = big(3);
 
   it('should receive deposit by owner', async function () {
+    // We need to instantiate the WalletProxy (with its actual address) as a Wallet Object
+    // so we have access to all the functions. => The WalletProxy is then interpreted as a
+    // Wallet (while actually all calls get delegated to the actual Wallet)
     let w = await Wallet.at((await WalletProxy.deployed()).address);
     let { logs } = await w.sendTransaction({ value: initialDepositAmount, from: owner });
     verifyLogs(logs, [
