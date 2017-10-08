@@ -1,6 +1,10 @@
 # Solidity Wallet
 *WARNING: DO NOT USE THIS* – This is just a developer playground.
 
+This is the solution to the exercise in the [wallet.pdf](wallet.pdf).
+
+It implements a basic wallet for ether and tokens. It also allows users to deposit funds. The wallet contract can be upgraded since we use a proxy contract that holds the funds. (not tested for security and stability)
+
 ## Setup
 
 Install [truffle](https://github.com/trufflesuite/truffle)
