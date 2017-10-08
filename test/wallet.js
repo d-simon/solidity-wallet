@@ -250,6 +250,7 @@ contract('Wallet', function(accounts) {
 function verifyLogs(logs, expectedLogs) {
   return expectedLogs.forEach((expected, index) => {
     let l = logs[index];
+    assert.isObject(l, `Expected is an object (${expected.event})`);
     l.event.should.equal(expected.event)
     l.args.should.deep.equal(expected.args)
   });

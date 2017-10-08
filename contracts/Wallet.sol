@@ -1,29 +1,18 @@
 pragma solidity ^0.4.4;
 
 import './Whitelistable.sol';
-import 'zeppelin/token/ERC20.sol';
+import './WalletLib.sol';
 
 contract Wallet is Whitelistable {
-  mapping (address => uint) public spendingLimits;
 
-  Request[] public transferRequests;
+  // maps the methods of WalletLib onto WalletLib.Request[] (only the array type)
+  using WalletLib for WalletLib.Request[];
+
+  WalletLib.Request[] public transfer_requests;
+
+  mapping (address => uint) public spending_limits;
+
   address public owner;
-
-  enum RequestState {
-    PENDING,
-    APPROVED,
-    EXECUTED,
-    REJECTED
-  }
-
-  struct Request {
-    address sender;
-    address destination;
-    uint value;
-    RequestState state;
-    uint timestamp;
-    ERC20 token;
-  }
 
   // Fired whenever ether is received.
   event Deposit(address indexed depositor, uint value);
@@ -32,7 +21,7 @@ contract Wallet is Whitelistable {
   // Fired when a when a new request has been added. The only way to get the id.
   event RequestAdded(uint id, address indexed sender);
   // Fired every time when the request state changes (not necessary for “change” to PENDING)
-  event RequestUpdate(uint indexed id, RequestState state);
+  event RequestUpdate(uint indexed id, uint state);
   // Fired when the spending limit is updated
   event SpendingLimitUpdated(address indexed addr, uint value);
 
@@ -50,8 +39,8 @@ contract Wallet is Whitelistable {
   function() payable {
     require(msg.value > 0);
     if (msg.sender != owner) {
-      spendingLimits[msg.sender] += msg.value;
-      SpendingLimitUpdated(msg.sender,spendingLimits[msg.sender]);
+      spending_limits[msg.sender] += msg.value;
+      SpendingLimitUpdated(msg.sender,spending_limits[msg.sender]);
     }
     Deposit(msg.sender, msg.value);
   }
@@ -60,7 +49,7 @@ contract Wallet is Whitelistable {
   // the spending limit for any address
   function setSpendingLimit(address party, uint limit)
   onlyOwner {
-    spendingLimits[party] = limit;
+    spending_limits[party] = limit;
     SpendingLimitUpdated(party, limit);
   }
 
@@ -70,9 +59,9 @@ contract Wallet is Whitelistable {
   // can deposit into the Wallet.
   function spend(address destination, uint value) {
     if (msg.sender != owner) {
-      require(spendingLimits[msg.sender] >= value);
-      spendingLimits[msg.sender] -= value;
-      SpendingLimitUpdated(msg.sender, spendingLimits[msg.sender]);
+      require(spending_limits[msg.sender] >= value);
+      spending_limits[msg.sender] -= value;
+      SpendingLimitUpdated(msg.sender, spending_limits[msg.sender]);
     }
 
     // tranfer automatically reverts in case of failure
@@ -85,63 +74,28 @@ contract Wallet is Whitelistable {
   // increase by one. Initial state is PENDING.
   function request(address destination, uint value, uint timestamp, address token)
   onlyWhitelisted {
-    transferRequests.push(Request({
-      sender: msg.sender,
-      destination: destination,
-      value: value,
-      state: RequestState.PENDING,
-      timestamp: timestamp,
-      token: ERC20(token)
-    }));
-    RequestAdded(transferRequests.length - 1, msg.sender);
-  }
-
-  modifier checkRequest (uint id, address destination, uint value, uint timestamp, address token, RequestState expected) {
-    Request storage req = transferRequests[id];
-    require(req.state == expected);
-    require(req.destination == destination);
-    require(req.value == value);
-    require(req.token == token);
-    require(req.timestamp == timestamp);
-    _;
+    transfer_requests.request(destination, value, timestamp, token);
+    // Could also be written as WalletLib.request(transfer_requests, destination, value, timestamp, token);
   }
 
   // Can only be called by the owner. Checks destination and value. (Because the chain organisation)
   // State changes to APPROVED.
   function approve(uint id, address destination, uint value, uint timestamp, address token)
-  onlyOwner checkRequest(id, destination, value, timestamp, token, RequestState.PENDING) {
-    Request storage req = transferRequests[id];
-    req.state = RequestState.APPROVED;
-    RequestUpdate(id, req.state);
+  onlyOwner {
+    transfer_requests.approve(id, destination, value, timestamp, token);
   }
 
   // Can only be called by the owner. Checks destination and value.
   // State changes to REJECTED.
   function reject(uint id, address destination, uint value, uint timestamp, address token)
-  onlyOwner checkRequest(id, destination, value, timestamp, token, RequestState.PENDING) {
-    Request storage req = transferRequests[id];
-    req.state = RequestState.REJECTED;
-    RequestUpdate(id, req.state);
+  onlyOwner {
+    transfer_requests.reject(id, destination, value, timestamp, token);
   }
-
-  /*function updateState(RequestState state)*/
 
   // Can only be called by the sender. State needs to be APPROVED and becomes EXECUTED.
   // Ether are sent out to the destination.
   function execute(uint id) {
-    Request storage req = transferRequests[id];
-    require(msg.sender == req.sender);
-    require(req.state == RequestState.APPROVED);
-    require(now < req.timestamp);
-    req.state = RequestState.EXECUTED;
-    RequestUpdate(id, req.state);
-
-    // if the token is 0, it's ethereum
-    if (req.token == ERC20(0)) {
-      req.destination.transfer(req.value);
-    } else {
-      require(req.token.transfer(req.destination, req.value)); //
-    }
-
+    transfer_requests.execute(id);
   }
+
 }
